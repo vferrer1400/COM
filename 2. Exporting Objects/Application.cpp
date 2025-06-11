@@ -10,6 +10,16 @@
 	// return 0;
 // }
 
+struct A
+{
+	int val = 5;
+};
+
+struct B : A
+{
+	int val2 = 6;
+};
+
 int main()
 {
 	IHen* hen = CreateHen();
@@ -24,5 +34,21 @@ int main()
 
 	// delete hen;
 
+	IHen2* hen2 = static_cast<IHen2*>(hen->As("IHen2"));
+	if (hen2)
+	{
+		hen2->Forage();
+		hen2->Release();
+		hen2 = nullptr;
+	}
+
+	IOfflineChicken* offline = static_cast<IOfflineChicken*>(hen->As("IOfflineChicken"));
+	if (offline)
+	{
+		offline->Save("filename");
+		offline->Release();
+		offline = nullptr;
+	}
 	hen->Release();
+	hen = nullptr;
 }

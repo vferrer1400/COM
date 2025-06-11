@@ -24,16 +24,36 @@
  // This is a demonstration how to export an object from a DLL. Although you can use
  // COM exclusively from within your application, it makes the most sense at the component
  // boundaries and the DLL represents the most common component boundary.
+struct IObject
+{
+	virtual void __stdcall AddRef() = 0;
+	virtual void __stdcall Release() = 0;
 
-struct IHen
+	// There is no way that clients know about new features by extension.
+	// This is a similar mechanism to dynamic_cast for runtime discoverability.
+	virtual void* __stdcall  As(char const* type ) = 0;
+};
+
+struct IHen :  IObject
 {
 	// We need to keep the binary as simple as possible, not using C++ features that
 	// might not be portable, and that excludes exporting the implementation class itself.
 	virtual void __stdcall Cluck() = 0;
 	virtual void __stdcall Roost() = 0;
 
-	virtual void __stdcall AddRef() = 0;
-	virtual void __stdcall Release() = 0;
+	//virtual void __stdcall AddRef() = 0;
+	//virtual void __stdcall Release() = 0;
+};
+
+struct IHen2 : IHen
+{
+	virtual void __stdcall Forage() = 0;
+};
+
+struct IOfflineChicken : IObject
+{
+	virtual void __stdcall Load(char const* file) = 0;
+	virtual void __stdcall Save(char const* file) = 0;
 };
 
 // A portable option then is to simply export a function for creating hens.
