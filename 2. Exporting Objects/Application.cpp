@@ -1,54 +1,45 @@
-#include "Library.h"
+#include "windows.h"
+#define TRACE OutputDebugString
 
-// To compile the application in dev command line
-// cl /W4 Application.cpp Library.def
-
-// Dependency Walker a useful app to review linking problems
-// int main()
-// {
-	// HenCluck();
-	// return 0;
-// }
-
-struct A
+struct ComException
 {
-	int val = 5;
+    HRESULT error;
+    ComException(HRESULT const hr) : error(hr){}
 };
 
-struct B : A
+inline void HR(HRESULT const hr)
 {
-	int val2 = 6;
-};
+    if (S_OK != hr)
+    {
+        throw ComException(hr);
+    }
+}
 
 int main()
 {
-	IHen* hen = CreateHen();
-	hen->Cluck();
-	hen->Roost();
+    HRESULT hr = S_OK;
+    //HRESULT hr = S_FALSE;
 
-	/* In order for this to work, the IHen interface needs a virtual destructor.
-	 * As it stands, it has no destructor at all. Adding a virtual destructor simply
-	 * introduces a new problem. Calling "delete" is compiler specific. Using 
-	 * "delete" for an object that wasn't created using new operator might yield
-	 * to unpredictable results.*/
+    // Strong advice to not use this macros and check the real errors
 
-	// delete hen;
+    //if (SUCCEEDED(hr))
+    //{
+    //    TRACE("succeeded\n");
+    //}
 
-	IHen2* hen2 = static_cast<IHen2*>(hen->As("IHen2"));
-	if (hen2)
-	{
-		hen2->Forage();
-		hen2->Release();
-		hen2 = nullptr;
-	}
+    //if (FAILED(hr))
+    //{
+    //    TRACE("failed\n");
+    //}
 
-	IOfflineChicken* offline = static_cast<IOfflineChicken*>(hen->As("IOfflineChicken"));
-	if (offline)
-	{
-		offline->Save("filename");
-		offline->Release();
-		offline = nullptr;
-	}
-	hen->Release();
-	hen = nullptr;
+    if (hr == S_OK)
+    {
+        TRACE("succeeded\n");
+    }
+    else
+    {
+        TRACE("failed\n");
+        HR(hr);
+    }
+    return 0;
 }
