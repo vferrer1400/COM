@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Library.h" />
+    <ClInclude Include="Precompiled.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Library.def" />
