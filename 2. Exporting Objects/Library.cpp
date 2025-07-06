@@ -1,115 +1,131 @@
 #include "Library.h"
 //#include <stdio.h>
-
-// To compile as a library in dev command line
-// cl /W4 /LD Library.cpp Library.def
-
-// void __stdcall HenCluck()
-// {
-	// printf("C-style cluck!\n");
-// }
-
 #include <windows.h>
+#include <crtdbg.h>
+#include <iostream>
 
+#define ASSERT _ASSERTE
 #define TRACE OutputDebugString
 
 struct Hen : IHen2, IOfflineChicken
 {
-	unsigned m_count;
-	Hen(): m_count(0)
-	{
-		TRACE("Cheep!\n");
-	}
+    long m_count;
+    Hen() : m_count(0)
+    {
+        static char* cheep("cheep\n");
+        TRACE(cheep);
+        std::cout << cheep;
+    }
 
-	~Hen()
-	{
-		TRACE("Chicken soup!\n");
-	}
+    ~Hen()
+    {
+        TRACE("Chicken soup!\n");
+    }
 
-	//
-	// IObject
-	//
+    //
+    // IUnknown
+    //
 
-	void __stdcall AddRef()
-	{
-		++m_count;
-	}
+    ULONG __stdcall AddRef()
+    {
+        return _InterlockedIncrement(&m_count);
+    }
 
-	void __stdcall Release()
-	{
-		if (0 == --m_count)
-		{
-			delete this;
-		}
-	}
+    ULONG __stdcall Release()
+    {
+        ULONG const result = _InterlockedDecrement(&m_count);
+        if (0 == result)
+        {
+            delete this;
+        }
+        return result;
+    }
 
-	void* __stdcall As(char const* type)
-	{
-		// Cannot simply static_cast every single interface since
-		// they will necessary be a hierarchy of interfacesand that
-		// would be ambiguous to the compiler. Simply match the 
-		// appropriate interfaces and then cast to the most derived interface
-		if (0 == strcmp(type, "IHen2") ||
-			0 == strcmp(type, "IHen") ||
-			0 == strcmp(type, "IObject"))
-		{
-			// It is duplicating the interface pointer
-			// then increasing count
-			AddRef();
-			return static_cast<IHen2*>(this);
-		}
-		else if (0 == strcmp(type, "IOfflineChicken"))
-		{
-			AddRef();
-			return static_cast<IOfflineChicken*>(this);
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
+    // IID is just a GUID. It's just customary to use IID when referring to
+    // an interface ID GUID.
+    // 
+    // We need to turn off the C++ type system momentarily to allow COM's
+    // runtime type discovery to be implemented portably and correctly.
+    //
+    HRESULT __stdcall QueryInterface(IID const& id, void** result)
+    {
+        ASSERT(result);
 
-	//
-	// IHen
-	//
+        if (id == __uuidof(IHen2) ||
+            id == __uuidof(IHen) ||
+            id == __uuidof(IUnknown))
+        {
+            *result = static_cast<IHen2*>(this);
+        }
+        else if (id == __uuidof(IOfflineChicken))
+        {
+            *result = static_cast<IOfflineChicken*>(this);
+        }
+        else
+        {
+            *result = 0;
+            return E_NOINTERFACE;
+        }
 
-	void __stdcall Cluck()
-	{
-		TRACE("Cluck\n");
-	}
+        // One of the rules of COM is that the Release function must
+        // be called on the same interface that the AddRef function was
+        // originally called on. This goes back to COM's object identity
+        // laws, which we'll cover in due course.
+        static_cast<IUnknown*>(*result)->AddRef();
+        return S_OK;
+    }
 
-	void __stdcall Roost()
-	{
-		TRACE("Zzzzzz!\n");
-	}
+    //
+    // IHen
+    //
 
-	//
-	// IHen2
-	//
+    void __stdcall Cluck()
+    {
+        static const char* cluck("Cluck\n");
+        TRACE(cluck);
+        std::cout << cluck;
+    }
 
-	void __stdcall Forage()
-	{
-		TRACE("Forage!\n");
-	}
+    void __stdcall Roost()
+    {
+        TRACE("Zzzzzz!\n");
+    }
 
-	//
-	// IOfflineChicken
-	//
+    //
+    // IHen2
+    //
 
-	void __stdcall Load(char const* /*file*/)
-	{
+    void __stdcall Forage()
+    {
+        TRACE("Forage!\n");
+    }
 
-	}
+    //
+    // IOfflineChicken
+    //
 
-	void __stdcall Save(char const* /*file*/)
-	{
+    void __stdcall Load(char const* /*file*/)
+    {
 
-	}
+    }
+
+    void __stdcall Save(char const* /*file*/)
+    {
+
+    }
 };
 
-IHen* __stdcall CreateHen()
+// This version will return a null pointer if the allocation fails.
+
+HRESULT __stdcall CreateHen(IHen** result)
 {
-	IHen* result = new Hen;
-	result->AddRef();
-	return result;
+    ASSERT(result);
+    *result = new (std::nothrow) Hen;
+    if (*result == 0)
+    {
+        return E_OUTOFMEMORY;
+    }
+
+    (*result)->AddRef();
+    return S_OK;
 }

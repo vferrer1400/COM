@@ -24,17 +24,24 @@
  // This is a demonstration how to export an object from a DLL. Although you can use
  // COM exclusively from within your application, it makes the most sense at the component
  // boundaries and the DLL represents the most common component boundary.
-struct IObject
-{
-	virtual void __stdcall AddRef() = 0;
-	virtual void __stdcall Release() = 0;
+//struct IObject
+//{
+//	virtual void __stdcall AddRef() = 0;
+//	virtual void __stdcall Release() = 0;
+//
+//	// There is no way that clients know about new features by extension.
+//	// This is a similar mechanism to dynamic_cast for runtime discoverability.
+//	virtual void* __stdcall  As(char const* type ) = 0;
+//};
 
-	// There is no way that clients know about new features by extension.
-	// This is a similar mechanism to dynamic_cast for runtime discoverability.
-	virtual void* __stdcall  As(char const* type ) = 0;
-};
+#include <unknwn.h>
 
-struct IHen :  IObject
+// Use uuidgen | clip in command line to generate a GUID and copy it
+// to clipboard
+
+
+struct __declspec(uuid("10712e79-ef71-4e76-99c2-cefe92a1f910"))
+IHen :  IUnknown
 {
 	// We need to keep the binary as simple as possible, not using C++ features that
 	// might not be portable, and that excludes exporting the implementation class itself.
@@ -45,16 +52,23 @@ struct IHen :  IObject
 	//virtual void __stdcall Release() = 0;
 };
 
-struct IHen2 : IHen
+
+struct __declspec(uuid("f7582a90-9a58-44fe-b054-bb2e75ea3f31"))
+IHen2 : IHen
 {
 	virtual void __stdcall Forage() = 0;
 };
 
-struct IOfflineChicken : IObject
+struct __declspec(uuid("44422fc2-b7ea-4951-9e5d-d984458ea1de"))
+IOfflineChicken : IUnknown
 {
 	virtual void __stdcall Load(char const* file) = 0;
 	virtual void __stdcall Save(char const* file) = 0;
 };
 
 // A portable option then is to simply export a function for creating hens.
-IHen* __stdcall CreateHen();
+
+// Using the COM approach of returning an interface pointer as an outer 
+// parameter. You give it an address of a pointer and it will copy the
+// value of the pointer to that location
+HRESULT __stdcall CreateHen(IHen** hen);
